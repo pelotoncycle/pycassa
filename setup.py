@@ -109,15 +109,15 @@ Please ask in the user forums for help.
 
 
 setup(
-      name = 'pycassa',
+      name = 'peloton-pycassa',
       version = __version__,
       author = 'Jonathan Hseu',
       author_email = 'vomjom AT vomjom.net',
-      maintainer = 'Tyler Hobbs',
-      maintainer_email = 'pycassa.maintainer@gmail.com',
-      description = 'Python client library for Apache Cassandra',
+      maintainer = 'Adam DePrince',
+      maintainer_email = 'adam@pelotoncycle.com',
+      description = 'Peloton fork of Python client library for Apache Cassandra.  This is not the pycassa you want.',
       long_description = long_description,
-      url = 'http://github.com/pycassa/pycassa',
+      url = 'http://github.com//pycassa',
       keywords = ['pycassa', 'cassandra', 'client', 'driver', 'db', 'distributed', 'thrift'],
       packages = ['pycassa',
                   'pycassa.cassandra',
@@ -129,16 +129,5 @@ setup(
       scripts=['pycassaShell'],
       cmdclass={"doc": doc, "rpm": rpm},
       classifiers=[
-          'Development Status :: 5 - Production/Stable',
-          'Intended Audience :: Developers',
-          'License :: OSI Approved :: MIT License',
-          'Natural Language :: English',
-          'Operating System :: OS Independent',
-          'Programming Language :: Python',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.6',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 2 :: Only',
-          'Topic :: Software Development :: Libraries :: Python Modules'
           ]
       )
