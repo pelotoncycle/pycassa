@@ -46,6 +46,8 @@ class ConnectionWrapper(Connection):
     _DISPOSED = 2
 
     def __init__(self, pool, max_retries, *args, **kwargs):
+        self._init_args = args
+        self._init_kwargs = kwargs
         self._pool = pool
         self._retry_count = 0
         self.max_retries = max_retries
@@ -53,6 +55,7 @@ class ConnectionWrapper(Connection):
         self.starttime = time.time()
         self.operation_count = 0
         self._state = ConnectionWrapper._CHECKED_OUT
+
         Connection.__init__(self, *args, **kwargs)
         self._pool._notify_on_connect(self)
 
@@ -117,6 +120,8 @@ class ConnectionWrapper(Connection):
     @classmethod
     def _retry(cls, f):
         def new_f(self, *args, **kwargs):
+            if self.operation_count == 0:
+                self.start_time = time.time()
             self.operation_count += 1
             self.info['request'] = {'method': f.__name__, 'args': args, 'kwargs': kwargs}
             try:
@@ -140,16 +145,26 @@ class ConnectionWrapper(Connection):
                 self.close()
                 self._pool._decrement_overflow()
                 self._pool._clear_current()
-
                 self._retry_count += 1
-                if (not allow_retries or
-                    (self.max_retries != -1 and self._retry_count > self.max_retries)):
+                if len(self._pool.server_list) > 1 and self._retry_count %3 == 0:
+                    server_list = [s for s in self._pool.server_list if s != self.server]
+                    server = random.choice(server_list)
+                    Connection.__init__(self,
+                                        self.keyspace,
+                                        server,
+                                        framed_transport=self._framed_transport,
+                                        timeout=self._timeout,
+                                        credentials=self._credentials,
+                                        socket_factory=self._socket_factory,
+                                        transport_factory=self._transport_factory)
+
+                if time.time() - self.start_time > 15:
                     raise MaximumRetryException('Retried %d times. Last failure was %s: %s' %
                                                 (self._retry_count, exc.__class__.__name__, exc))
                 # Exponential backoff
-                time.sleep(_BASE_BACKOFF * (2 ** self._retry_count))
+                time.sleep(_BASE_BACKOFF * (2 ** min(self.max_retries, self._retry_count)))
 
-                kwargs['reset'] = True
+                # kwargs['reset'] = True
                 return new_f(self, *args, **kwargs)
 
         new_f.__name__ = f.__name__
@@ -323,7 +338,7 @@ class ConnectionPool(object):
 
         .. code-block:: python
 
-            >>> pool = pycassa.ConnectionPool(keyspace='Keyspace1', server_list=['10.0.0.4:9160', '10.0.0.5:9160'], prefill=False)
+            >>> pool = pycassa.ConnectionPool(keyspace='Keyspace1', server_list=['10.0.0.4:9601', '10.0.0.5:9160'], prefill=False)
             >>> cf = pycassa.ColumnFamily(pool, 'Standard1')
             >>> cf.insert('key', {'col': 'val'})
             1287785685530679
