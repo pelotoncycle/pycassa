@@ -36,6 +36,12 @@ class Connection(Cassandra.Client):
                  transport_factory=default_transport_factory):
         self.keyspace = None
         self.server = server
+        self._framed_transport = framed_transport
+        self._timeout = timeout
+        self._credentials = credentials
+        self._socket_factory = socket_factory
+        self._transport_factory = transport_factory
+
         server = server.split(':')
         if len(server) <= 1:
             port = 9160
